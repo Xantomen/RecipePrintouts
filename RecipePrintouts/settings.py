@@ -22,8 +22,8 @@ elif socket.gethostname() == 'Marios-PC':
 
 else:
    
-    database_path = '/srv/recipeprintoutsapp/app/RecipePrintouts/databases/recipeprintoutsdb'    
-    template_dirs = '/srv/recipeprintoutsapp/app/RecipePrintouts/templates'
+    database_path = 'django-project/RecipePrintouts/databases/recipeprintoutsdb'    
+    template_dirs = 'django-project/RecipePrintouts/templates'
 
 
     
@@ -145,7 +145,7 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-MAINTENANCE_FILE = '/srv/recipeprintoutsapp/app/RecipePrintouts/recipeprintoutsapp/templates/recipeprintoutsapp/maintenance_screen.jpg' 
+MAINTENANCE_FILE = 'django-project/RecipePrintouts/recipeprintoutsapp/templates/recipeprintoutsapp/maintenance_screen.jpg' 
 
 MAINTENANCE_URL = '/recipeprintoutsapp/maintenance_screen'
 
