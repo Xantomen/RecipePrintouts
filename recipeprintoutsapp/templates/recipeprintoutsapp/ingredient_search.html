@@ -1,0 +1,463 @@
+
+{% load i18n %}
+{% load staticfiles %}
+
+
+{% block page_title %}
+<head>
+<title>Spider- Data Entry App</title>
+</head>
+{% endblock page_title %}
+
+{% block config_libs %} 
+
+<link rel="stylesheet" type="text/css" href="{% static 'recipeprintoutsapp/jquery-ui-1.10.3.custom/css/eggplant/jquery-ui-1.10.3.custom.css' %}" />
+<script type="text/javascript" src="{% static 'recipeprintoutsapp/jquery-ui-1.10.3.custom/js/jquery-1.9.1.js' %}" ></script>
+<script type="text/javascript" src="{% static 'recipeprintoutsapp/jquery-ui-1.10.3.custom/js/jquery-ui-1.10.3.custom.js' %}" ></script>
+
+
+{% endblock config_libs %}
+
+{% block special_libs %}
+<link rel="stylesheet" type="text/css" href="{% static 'recipeprintoutsapp/user_panel_module.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'recipeprintoutsapp/site_basic_style_template.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'recipeprintoutsapp/loadingscreen.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'recipeprintoutsapp/ingredient_search.css' %}" />
+
+
+{% endblock special_libs %}
+
+{% block jqueryui_setups %}
+
+<script>
+    
+    $(document).ready(function () {
+    
+        createUserPanel();
+
+        all_food_descriptions_list = {{all_food_descriptions|safe}};
+        all_food_content = {{all_food_content|safe}};
+        
+        all_food_content_dictionary = {};
+        all_food_descriptions_list_pairs = [];
+        
+        ingredients_dictionary_list = {{ingredients_dictionary_list|safe}}[0];
+        
+        ingredients_string = "{{ingredients_string}}";
+        console.log(ingredients_dictionary_list);
+        actual_ingredient = "";
+        
+        
+        for(i=0;i<all_food_content.length;i++)
+        {
+            all_food_descriptions_list_pairs.push({value:all_food_content[i].ndb_no,label:all_food_content[i].long_desc, })
+        
+            item_info = all_food_content[i];
+            all_food_content_dictionary[all_food_content[i].ndb_no] = all_food_content[i];
+        }
+        
+        initiateListeners();
+               
+        createIngredientsPanels(ingredients_string);
+               
+        function initiateListeners() {
+        
+            $('#ingredient_search_input').autocomplete({
+                  source: all_food_descriptions_list_pairs,
+                  focus: function(event, ui) {
+					// prevent autocomplete from updating the textbox
+					event.preventDefault();
+					// manually update the textbox
+					$(this).val(ui.item.label);
+                    },
+                    select: function(event, ui) {
+                        // prevent autocomplete from updating the textbox
+                        event.preventDefault();
+                        // manually update the textbox and hidden field
+                        $(this).val(ui.item.label);
+                        $("#ingredient_search_input").attr("value",ui.item.value);
+                        $("#ingredient_search_input").attr("ndb_no",ui.item.value);
+                        
+                        actual_ingredient = all_food_content_dictionary[ui.item.value];
+                        
+                        url = $("#submit_form").attr("action");
+                        
+                        ndb_no_value = ""
+                        
+                        if(ui.item.value)
+                        {
+                            ndb_no_value = ui.item.value
+                            
+                            if(ingredients_string == "none") //If "none" isn't in the url (there is at least one ingredient)
+                            {
+                                window.location.href = window.location.href.replace(ingredients_string,ndb_no_value);
+                                
+                            }
+                            else
+                            {
+                                if(ingredients_string.indexOf(ndb_no_value) == "-1")
+                                {
+                                    window.location.href = window.location.href.replace(ingredients_string,ingredients_string+"_"+ndb_no_value);
+                                }
+                                else
+                                {
+                                    window.location.href = window.location.href.replace(ingredients_string,ingredients_string);
+                                }
+                            }
+                        }
+                    },
+                  appendTo: "#ingredient_search_input_panel",
+            });
+        
+            /* if($( "#currency" ).autocomplete( "option", "disabled" ))
+            {
+                
+                $('input:not(#companyname_search)').blur();
+                
+            } */
+            
+            $("#left_container").click(function(event){
+            
+                
+                    clickPosition = getClickPosition(event);
+      
+                    $("#ingredient_search_input_panel").css("left",clickPosition.x+"px");
+                    $("#ingredient_search_input_panel").css("top",clickPosition.y+"px");
+                    
+                    if($("#ingredient_search_input_panel").hasClass("panel_inactive"))
+                    {
+                        $("#ingredient_search_input_panel").removeClass("panel_inactive");
+                    }
+                    
+                    $("#ingredient_search_input").attr("value","");
+                    $("#ingredient_search_input").val("");
+                    $("#ingredient_search_input").focus();
+            });
+            
+            $("#ingredient_search_input_panel").click(function(event){
+            
+                event.stopPropagation();
+
+            });
+            
+            $("#ingredient_search_input").blur(function(event){
+            
+                //alert(all_food_content);
+
+            });
+        
+        }
+        
+        function createIngredientsPanels(ingredients_string)
+        {
+        
+            ingredients_array = ingredients_string.split("_");
+        
+            for(i=0;i<ingredients_array.length;i++)
+            {
+                createIngredientPanel(ingredients_array[i]);
+            }
+        }
+        
+        function createIngredientPanel(ndb_no) {
+            
+            s = '';
+            s += '<div class="ingredient_panel" id="ingredient_panel'+ndb_no+'" >';
+            s += '<div class="ingredient_name" id="ingredient_name'+ndb_no+'">'+ingredients_dictionary_list[ndb_no].long_desc+'</div>';
+            s += '</div>';
+            
+            $("#ingredients_panel").append(s);
+            
+            $("#ingredient_name"+ndb_no).click(function(event){
+            
+                event.stopPropagation();
+
+                $("#ingredient_table_panel").remove();
+                
+                createIngredientTablePanel(ndb_no);
+            
+            });
+           
+        }
+        
+        function createIngredientTablePanel(ndb_no) {
+        
+            s = ''
+            s += '<div id="ingredient_table_panel">';
+            s += '<table>';
+            s += '<thead>';
+            s += '<tr>';
+            s += '<th>';
+            s += "Nutrient";
+            s += '</th>';
+            s += '<th>';
+            s += "Unit";
+            s += '</th>';
+            s += '<th>';
+            s += "Value Per 100g";
+            s += '</th>';
+            s += '<th>';
+            s += "Food Group";
+            s += '</th>';
+            s += '</tr>';
+            s += '</thead>';
+            s += '<tbody>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Water';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Water"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Water"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Energy';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Energy"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Energy"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Protein';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Protein"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Protein"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Total lipid (fat)';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Total lipid (fat)"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Total lipid (fat)"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Carbohydrate, by difference';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Carbohydrate, by difference"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Carbohydrate, by difference"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Fiber, total dietary';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Fiber, total dietary"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Fiber, total dietary"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '<tr>';
+            s += '<td>';
+            s += 'Sugars, total';
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Sugars, total"].units;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].nutrients_dictionary["Sugars, total"].nutr_val;
+            s += '</td>';
+            s += '<td>';
+            s += ingredients_dictionary_list[ndb_no].fdgrp_desc;
+            s += '</td>';
+            s += '</tr>';
+            s += '</tbody>';
+            s += '</table>';
+            s += '</div>';
+        
+            $("#left_container").append(s);
+            
+        }
+        
+        function getClickPosition(e) {
+            var parentPosition = getPosition(e.currentTarget);
+            var xPosition = e.clientX - parentPosition.x;
+            var yPosition = e.clientY - parentPosition.y;
+            
+            return { x: xPosition, y: yPosition };
+        }
+        
+        function getPosition(element) {
+            var xPosition = 0;
+            var yPosition = 0;
+              
+            while (element) {
+                xPosition += (element.offsetLeft - element.scrollLeft + element.clientLeft);
+                yPosition += (element.offsetTop - element.scrollTop + element.clientTop);
+                element = element.offsetParent;
+            }
+            return { x: xPosition, y: yPosition };
+        }
+
+        function configLoadingScreen(){
+        
+            image_width = $('#LoadingSpinner').width();
+            image_height = $('#LoadingSpinner').height();
+            
+            $('#LoadingSpinner').css("margin-left",-image_width/2);
+            $('#LoadingSpinner').css("margin-top",-image_height/2);
+            
+            //text_width = $('#LoadingDescription').width();
+            //text_height = $('#LoadingDescription').height();
+        
+            //$('#LoadingDescription').css("margin-left",-text_width/2);
+            //$('#LoadingDescription').css("margin-top",-text_height/2);
+
+        }
+        
+        function toggleLoadingScreen(){
+        
+            $('#LoadingScreen').toggleClass("invisible");
+            
+        }
+        
+        function createUserPanel(){
+        
+            $( "#user-panel" ).dialog({
+                  
+                  height: $('#userpanel_container').height(),
+                  width: $('#userpanel_container').width(),
+                  modal: false,
+                  autoOpen:true,
+                  closeOnEscape: false,
+                  resizable:true,
+                  position: {
+                    my: "left bottom", at: "left bottom", of: $('#userpanel_container')
+                    }
+                  
+                });
+                
+                $( "#userpanelmenu" ).menu({ position: { my: "right bottom", at: "right bottom" },
+                    select: function( event, ui ) {
+                        
+                    } 
+                });
+            }
+        
+    });
+        
+</script>
+
+{% endblock jqueryui_setups %}  
+
+<body>
+{% if not is_popup %}
+
+<div id = "LoadingScreen" class="invisible">
+        <img id ="LoadingSpinner"  src = "{% static 'recipeprintoutsapp/images/ajax-loader.gif' %}"/>
+        <h4 id="LoadingDescription"></h4>
+    </div>
+
+{% block container_all %}
+
+<div id="container_all">
+
+{% block container_headers %}
+
+<div id="container_headers">
+
+
+
+</div>
+
+{% endblock container_headers %}
+
+{% block container_body %}
+
+<div id="container_body">
+
+{% block content%}
+    
+    <form id="submit_form" autocomplete="off" action="{% url 'recipeprintoutsapp:ingredient_search' ingredients_string %}" method="post">
+    {% csrf_token %}
+
+    <div id="left_container">
+    
+        <div id="iframe_test">
+     
+        </div>
+    
+        <div id="ingredients_panel">
+        
+        </div>
+        
+        
+        <div id="ingredient_search_input_panel" class="panel_inactive">
+            <input value="" placeholder="Write your ingredient here" type="text" name="ingredient_search_input" id="ingredient_search_input" class="text ui-widget-content ui-corner-all" />
+        </div> 
+        
+    
+        
+    </div>
+    <div id="right_container">
+        
+       
+        <div id="userpanel_container">
+            <div id="user-panel" title="{{user.username}}">
+                <ul class="menuclass" id="userpanelmenu">
+                    <li><a id="logout_link" href="{% url 'recipeprintoutsapp:app_login' %}">Change User</a></li>
+                    <li>--</li>
+                    <li><a id="toolsmenu_link" href="{% url 'recipeprintoutsapp:app_index' %}">Return to Tools Menu</a></li>
+                </ul>
+            </div>
+        </div>
+                
+    </div>
+    
+    </form>
+{% endblock content%}
+
+
+
+</div>
+
+{% endblock container_body %}
+
+</div>
+
+{% endblock container_all %}
+
+{% endif %}
+</body>
+
+
+{% block sidebar %}{% endblock %}
