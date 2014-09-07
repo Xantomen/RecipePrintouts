@@ -22,8 +22,8 @@ elif socket.gethostname() == 'Marios-PC':
 
 else:
    
-    database_path = 'django-project/RecipePrintouts/databases/recipeprintoutsdb'    
-    template_dirs = 'django-project/RecipePrintouts/templates'
+    database_path = '/home/ec2-user/django-project/RecipePrintouts/databases/recipeprintoutsdb'    
+    template_dirs = '/home/ec2-user/django-project/RecipePrintouts/templates'
 
 
     
