@@ -189,7 +189,7 @@ else:
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'recipeprintoutsapp',
-        'maintenance',
+        #'maintenance',
         'django_extensions',
         #'template_previewer',
         #'previewer',
